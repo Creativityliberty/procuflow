@@ -1,0 +1,3 @@
+<?php
+namespace App\Models;use Illuminate\Database\Eloquent\Model;use Illuminate\Database\Eloquent\Relations\BelongsTo;use Illuminate\Database\Eloquent\Relations\HasMany;
+class Delivery extends Model{protected $fillable=['tenant_id','purchase_order_id','status','planned_at','confirmed_at','supplier_comment'];protected function casts():array{return['planned_at'=>'date','confirmed_at'=>'datetime'];}public function purchaseOrder():BelongsTo{return $this->belongsTo(PurchaseOrder::class);}public function items():HasMany{return $this->hasMany(DeliveryItem::class);}public function receipts():HasMany{return $this->hasMany(DeliveryReceipt::class)->latest('received_at');}}

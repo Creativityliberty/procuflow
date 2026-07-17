@@ -1,0 +1,3 @@
+<?php
+namespace App\Models;use Illuminate\Database\Eloquent\Model;use Illuminate\Database\Eloquent\Relations\BelongsTo;use Illuminate\Database\Eloquent\Relations\HasMany;
+class DeliveryReceipt extends Model{protected $fillable=['received_by','reference','received_at','type','observations','bl_original_name','bl_path','pv_original_name','pv_path','disk'];protected $hidden=['bl_path','pv_path','disk'];protected function casts():array{return['received_at'=>'date'];}public function receiver():BelongsTo{return $this->belongsTo(User::class,'received_by');}public function items():HasMany{return $this->hasMany(DeliveryReceiptItem::class);}}

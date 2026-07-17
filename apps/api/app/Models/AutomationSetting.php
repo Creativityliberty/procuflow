@@ -1,0 +1,3 @@
+<?php
+namespace App\Models;use Illuminate\Database\Eloquent\Model;
+class AutomationSetting extends Model{protected $fillable=['tenant_id','email_enabled','in_app_enabled','rfq_reminder_days','approval_reminder_hours','delivery_reminder_days','invoice_reminder_days','document_expiry_days','contract_expiry_days'];protected function casts():array{return['email_enabled'=>'boolean','in_app_enabled'=>'boolean','rfq_reminder_days'=>'integer','approval_reminder_hours'=>'integer','delivery_reminder_days'=>'integer','invoice_reminder_days'=>'integer','document_expiry_days'=>'integer','contract_expiry_days'=>'integer'];}}

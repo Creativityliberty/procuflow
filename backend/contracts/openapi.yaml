@@ -1,0 +1,1316 @@
+openapi: 3.1.0
+info:
+  title: ProcuFlow Africa API
+  version: 0.16.0-sprint16
+  description: API REST multi-tenant avec RBAC, RFI, conformité RFQ, contrats, reporting LEAN et abonnements DOHONE.
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Environnement local
+security:
+  - bearerAuth: []
+paths:
+  /auth/register:
+    post:
+      security: []
+      tags: [Auth]
+      summary: Creer un compte, une entreprise et son circuit initial
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201": { description: Compte cree }
+        "422": { $ref: "#/components/responses/ValidationError" }
+  /auth/login:
+    post:
+      security: []
+      tags: [Auth]
+      summary: Ouvrir une session par jeton Sanctum
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+      responses:
+        "200": { description: Session ouverte }
+        "422": { $ref: "#/components/responses/ValidationError" }
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Lire l'utilisateur, l'entreprise et le role courants
+      responses:
+        "200": { description: Session courante }
+  /auth/forgot-password:
+    post:
+      security: []
+      tags: [Auth]
+      summary: Envoyer un lien de reinitialisation sans divulguer l'existence du compte
+      responses:
+        "200": { description: Reponse generique envoyee }
+  /auth/reset-password:
+    post:
+      security: []
+      tags: [Auth]
+      summary: Reinitialiser le mot de passe et revoquer les anciennes sessions
+      responses:
+        "200": { description: Mot de passe reinitialise }
+        "422": { $ref: "#/components/responses/ValidationError" }
+  /invitations/{token}:
+    get:
+      security: []
+      tags: [Team]
+      summary: Verifier une invitation temporaire
+      parameters:
+        - { name: token, in: path, required: true, schema: { type: string } }
+      responses:
+        "200": { description: Invitation active }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /invitations/{token}/accept:
+    post:
+      security: []
+      tags: [Team]
+      summary: Accepter une invitation une seule fois
+      parameters:
+        - { name: token, in: path, required: true, schema: { type: string } }
+      responses:
+        "200": { description: Membre rattache et session ouverte }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Revoquer le jeton courant
+      responses:
+        "204": { description: Session fermee }
+  /tenants:
+    get:
+      tags: [Tenants]
+      summary: Lister les entreprises accessibles
+      responses:
+        "200": { description: Entreprises accessibles }
+  /tenants/{tenant}/switch:
+    post:
+      tags: [Tenants]
+      summary: Selectionner l'entreprise courante
+      parameters:
+        - $ref: "#/components/parameters/TenantPath"
+      responses:
+        "200": { description: Entreprise selectionnee }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /tenant:
+    get:
+      tags: [Tenants]
+      summary: Lire l'entreprise courante
+      responses:
+        "200": { description: Entreprise courante }
+    put:
+      tags: [Tenants]
+      summary: Mettre a jour les reglages de l'entreprise
+      responses:
+        "200": { description: Entreprise mise a jour }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /dashboard:
+    get:
+      tags: [Dashboard]
+      summary: Calculer les KPI et les validations actionnables
+      responses:
+        "200": { description: KPI du tenant }
+  /reports/overview:
+    get:
+      tags: [Reports]
+      summary: Calculer les KPI achats sur une periode
+      parameters:
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+      responses:
+        "200": { description: KPI, tendance mensuelle et statuts }
+  /reports/budget-variances:
+    get:
+      tags: [Reports]
+      summary: Analyser les ecarts entre budgets DA et commandes
+      parameters:
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+      responses:
+        "200": { description: Synthese et detail des derives }
+  /reports/supplier-performance:
+    get:
+      tags: [Reports]
+      summary: Classer les performances et risques fournisseurs
+      parameters:
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+      responses:
+        "200": { description: Scorecard et liste sous surveillance }
+  /reports/snapshots:
+    get:
+      tags: [Reports]
+      summary: Lister les rapports periodiques archives
+      responses:
+        "200": { description: Douze derniers rapports }
+  /reports/generate:
+    post:
+      tags: [Reports]
+      summary: Figer un rapport officiel pour une periode
+      responses:
+        "201": { description: Snapshot archive }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /reports/export:
+    get:
+      tags: [Reports]
+      summary: Exporter un rapport en CSV UTF-8
+      responses:
+        "200": { description: Fichier CSV }
+  /team:
+    get:
+      tags: [Team]
+      summary: Lister les membres, roles et invitations de l'entreprise
+      responses:
+        "200": { description: Equipe courante }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /team/invitations:
+    post:
+      tags: [Team]
+      summary: Inviter un collaborateur pour sept jours
+      responses:
+        "201": { description: Invitation envoyee }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /team/members/{user}:
+    put:
+      tags: [Team]
+      summary: Modifier le role ou la fonction d'un membre
+      parameters:
+        - { name: user, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Membre mis a jour }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    delete:
+      tags: [Team]
+      summary: Retirer l'acces d'un membre
+      parameters:
+        - { name: user, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Acces retire }
+  /suppliers:
+    get:
+      tags: [Suppliers]
+      summary: Lister et filtrer les fournisseurs
+      parameters:
+        - { name: search, in: query, schema: { type: string } }
+        - { name: status, in: query, schema: { type: string } }
+        - { name: category, in: query, schema: { type: string } }
+      responses:
+        "200": { description: Page de fournisseurs }
+    post:
+      tags: [Suppliers]
+      summary: Creer un dossier fournisseur en brouillon
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SupplierInput"
+      responses:
+        "201": { description: Fournisseur cree }
+        "422": { $ref: "#/components/responses/ValidationError" }
+  /suppliers/{supplier}:
+    get:
+      tags: [Suppliers]
+      summary: Lire le dossier complet d'un fournisseur
+      parameters:
+        - $ref: "#/components/parameters/SupplierPath"
+      responses:
+        "200": { description: Dossier, documents, evaluations et historique }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      tags: [Suppliers]
+      summary: Modifier un fournisseur
+      parameters:
+        - $ref: "#/components/parameters/SupplierPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SupplierInput"
+      responses:
+        "200": { description: Fournisseur mis a jour }
+    patch:
+      tags: [Suppliers]
+      summary: Modifier partiellement un fournisseur
+      parameters:
+        - $ref: "#/components/parameters/SupplierPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SupplierPatchInput"
+      responses:
+        "200": { description: Fournisseur mis a jour }
+    delete:
+      tags: [Suppliers]
+      summary: Supprimer un fournisseur non actif
+      parameters:
+        - $ref: "#/components/parameters/SupplierPath"
+      responses:
+        "204": { description: Fournisseur supprime }
+  /suppliers/{supplier}/submit:
+    post:
+      tags: [Suppliers]
+      summary: Soumettre un fournisseur a la validation N+1
+      parameters:
+        - $ref: "#/components/parameters/SupplierPath"
+      responses:
+        "200": { description: Statut en attente }
+  /suppliers/{supplier}/approve:
+    post:
+      tags: [Suppliers]
+      summary: Valider et activer un fournisseur
+      parameters:
+        - $ref: "#/components/parameters/SupplierPath"
+      responses:
+        "200": { description: Fournisseur actif }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /suppliers/{supplier}/suspend:
+    post:
+      tags: [Suppliers]
+      summary: Suspendre un fournisseur
+      parameters:
+        - $ref: "#/components/parameters/SupplierPath"
+      responses:
+        "200": { description: Fournisseur suspendu }
+  /suppliers/{supplier}/reactivate:
+    post:
+      tags: [Suppliers]
+      summary: Reactiver un fournisseur
+      parameters:
+        - $ref: "#/components/parameters/SupplierPath"
+      responses:
+        "200": { description: Fournisseur actif }
+  /suppliers/{supplier}/documents:
+    get:
+      tags: [SupplierDocuments]
+      summary: Lister les documents prives du fournisseur
+      parameters:
+        - $ref: "#/components/parameters/SupplierPath"
+      responses:
+        "200": { description: Documents }
+    post:
+      tags: [SupplierDocuments]
+      summary: Televerser un document prive
+      parameters:
+        - $ref: "#/components/parameters/SupplierPath"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [document_type, file]
+              properties:
+                document_type: { type: string, enum: [rccm, niu, tax_certificate, insurance, approval, other] }
+                file: { type: string, format: binary }
+                expires_at: { type: string, format: date }
+      responses:
+        "201": { description: Document enregistre }
+  /suppliers/{supplier}/documents/{document}:
+    delete:
+      tags: [SupplierDocuments]
+      summary: Supprimer un document du dossier
+      parameters:
+        - $ref: "#/components/parameters/SupplierPath"
+        - $ref: "#/components/parameters/SupplierDocumentPath"
+      responses:
+        "204": { description: Document supprime }
+  /suppliers/{supplier}/documents/{document}/download:
+    get:
+      tags: [SupplierDocuments]
+      summary: Telecharger un document prive
+      parameters:
+        - $ref: "#/components/parameters/SupplierPath"
+        - $ref: "#/components/parameters/SupplierDocumentPath"
+      responses:
+        "200": { description: Contenu du document }
+  /suppliers/{supplier}/evaluations:
+    get:
+      tags: [SupplierEvaluations]
+      summary: Lister les evaluations du fournisseur
+      parameters:
+        - $ref: "#/components/parameters/SupplierPath"
+      responses:
+        "200": { description: Evaluations }
+    post:
+      tags: [SupplierEvaluations]
+      summary: Noter les six criteres et recalculer le score global
+      parameters:
+        - $ref: "#/components/parameters/SupplierPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SupplierEvaluationInput"
+      responses:
+        "201": { description: Evaluation enregistree }
+  /acde-needs:
+    get:
+      tags: [ACDE]
+      summary: Lister les besoins ACDE
+      responses:
+        "200": { description: Page de besoins }
+    post:
+      tags: [ACDE]
+      summary: Creer un besoin avec les quatre rubriques ACDE
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcdeNeedInput"
+      responses:
+        "201": { description: Besoin cree }
+  /acde-needs/{acdeNeed}:
+    get:
+      tags: [ACDE]
+      summary: Lire une matrice ACDE complete
+      parameters:
+        - $ref: "#/components/parameters/AcdeNeedPath"
+      responses:
+        "200": { description: Besoin ACDE }
+    put:
+      tags: [ACDE]
+      summary: Modifier un besoin en brouillon
+      parameters:
+        - $ref: "#/components/parameters/AcdeNeedPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcdeNeedInput"
+      responses:
+        "200": { description: Besoin mis a jour }
+    patch:
+      tags: [ACDE]
+      summary: Modifier partiellement un besoin en brouillon
+      parameters:
+        - $ref: "#/components/parameters/AcdeNeedPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcdeNeedPatchInput"
+      responses:
+        "200": { description: Besoin mis a jour }
+    delete:
+      tags: [ACDE]
+      summary: Supprimer un besoin en brouillon
+      parameters:
+        - $ref: "#/components/parameters/AcdeNeedPath"
+      responses:
+        "204": { description: Besoin supprime }
+  /acde-needs/{acdeNeed}/documents:
+    post:
+      tags: [ACDE]
+      summary: Ajouter une piece privee au besoin en brouillon
+      parameters:
+        - $ref: "#/components/parameters/AcdeNeedPath"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        "201": { description: Document ajoute }
+  /acde-needs/{acdeNeed}/documents/{document}:
+    delete:
+      tags: [ACDE]
+      summary: Supprimer une piece du besoin en brouillon
+      parameters:
+        - $ref: "#/components/parameters/AcdeNeedPath"
+        - { name: document, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Document supprime }
+  /acde-needs/{acdeNeed}/documents/{document}/download:
+    get:
+      tags: [ACDE]
+      summary: Telecharger une piece privee du besoin
+      parameters:
+        - $ref: "#/components/parameters/AcdeNeedPath"
+        - { name: document, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Contenu du document }
+  /purchase-requests:
+    get:
+      tags: [PurchaseRequests]
+      summary: Lister et filtrer les demandes d'achat
+      responses:
+        "200": { description: Page de demandes }
+    post:
+      tags: [PurchaseRequests]
+      summary: Creer un brouillon ou soumettre une demande
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PurchaseRequestInput"
+      responses:
+        "201": { description: Demande creee }
+  /purchase-requests/{purchaseRequest}:
+    get:
+      tags: [PurchaseRequests]
+      summary: Lire une demande, ses lignes et son circuit
+      parameters:
+        - $ref: "#/components/parameters/PurchaseRequestPath"
+      responses:
+        "200": { description: Demande complete }
+    put:
+      tags: [PurchaseRequests]
+      summary: Remplacer les informations d'un brouillon
+      parameters:
+        - $ref: "#/components/parameters/PurchaseRequestPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PurchaseRequestInput"
+      responses:
+        "200": { description: Demande mise a jour }
+    patch:
+      tags: [PurchaseRequests]
+      summary: Modifier partiellement un brouillon
+      parameters:
+        - $ref: "#/components/parameters/PurchaseRequestPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PurchaseRequestPatchInput"
+      responses:
+        "200": { description: Demande mise a jour }
+    delete:
+      tags: [PurchaseRequests]
+      summary: Supprimer un brouillon
+      parameters:
+        - $ref: "#/components/parameters/PurchaseRequestPath"
+      responses:
+        "204": { description: Demande supprimee }
+  /purchase-requests/{purchaseRequest}/submit:
+    post:
+      tags: [Approvals]
+      summary: Soumettre un brouillon au circuit actif
+      parameters:
+        - $ref: "#/components/parameters/PurchaseRequestPath"
+      responses:
+        "200": { description: Demande en validation }
+  /purchase-requests/{purchaseRequest}/documents:
+    post:
+      tags: [PurchaseRequests]
+      summary: Ajouter une piece justificative au brouillon
+      parameters:
+        - $ref: "#/components/parameters/PurchaseRequestPath"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        "201": { description: Document ajoute }
+  /purchase-requests/{purchaseRequest}/documents/{document}:
+    delete:
+      tags: [PurchaseRequests]
+      summary: Supprimer une piece justificative du brouillon
+      parameters:
+        - $ref: "#/components/parameters/PurchaseRequestPath"
+        - { name: document, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Document supprime }
+  /purchase-requests/{purchaseRequest}/documents/{document}/download:
+    get:
+      tags: [PurchaseRequests]
+      summary: Telecharger une piece justificative privee
+      parameters:
+        - $ref: "#/components/parameters/PurchaseRequestPath"
+        - { name: document, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Contenu du document }
+  /purchase-requests/{purchaseRequest}/approve:
+    post:
+      tags: [Approvals]
+      summary: Approuver l'etape actuellement ouverte
+      parameters:
+        - $ref: "#/components/parameters/PurchaseRequestPath"
+      responses:
+        "200": { description: Decision enregistree }
+  /purchase-requests/{purchaseRequest}/reject:
+    post:
+      tags: [Approvals]
+      summary: Rejeter l'etape actuellement ouverte avec un motif
+      parameters:
+        - $ref: "#/components/parameters/PurchaseRequestPath"
+      responses:
+        "200": { description: Rejet enregistre }
+  /approval-workflow:
+    get:
+      tags: [ApprovalWorkflows]
+      summary: Lire le circuit actif des demandes d'achat
+      responses:
+        "200": { description: Circuit et etapes }
+    put:
+      tags: [ApprovalWorkflows]
+      summary: Remplacer les roles et seuils du circuit actif
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApprovalWorkflowInput"
+      responses:
+        "200": { description: Circuit mis a jour }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /approvals/inbox:
+    get:
+      tags: [Approvals]
+      summary: Lister les etapes actuellement actionnables par l'utilisateur
+      responses:
+        "200": { description: Page de validations }
+  /audit-logs:
+    get:
+      tags: [Audit]
+      summary: Lister le journal d'audit du tenant
+      responses:
+        "200": { description: Page d'evenements }
+  /payments/dohone/start:
+    post:
+      tags: [Payments]
+      deprecated: true
+      summary: Endpoint historique neutralise
+      responses:
+        "410": { description: Utiliser /subscription/checkout }
+  /payments/dohone/notify:
+    get:
+      security: []
+      tags: [Payments]
+      deprecated: true
+      summary: Endpoint historique neutralise
+      responses:
+        "410": { description: Utiliser /subscriptions/dohone/notify }
+  /procurement-policy:
+    get: { tags: [Procurement], summary: Lire les seuils et quotas, responses: { "200": { description: Regles actives } } }
+    put: { tags: [Procurement], summary: Remplacer les seuils et quotas, responses: { "200": { description: Regles mises a jour } } }
+  /purchase-requests/{purchaseRequest}/stock-check:
+    get: { tags: [Stock], summary: Lire le controle de disponibilite, parameters: [ { $ref: "#/components/parameters/PurchaseRequestPath" } ], responses: { "200": { description: Controle } } }
+    put: { tags: [Stock], summary: Enregistrer la disponibilite de chaque ligne, parameters: [ { $ref: "#/components/parameters/PurchaseRequestPath" } ], responses: { "201": { description: Controle enregistre } } }
+  /information-requests:
+    get:
+      tags: [RFI]
+      summary: Lister et filtrer les demandes d'information
+      parameters:
+        - { name: status, in: query, schema: { type: string, enum: [draft, published, closed, archived] } }
+        - { name: search, in: query, schema: { type: string } }
+      responses: { "200": { description: Liste paginee des RFI } }
+    post:
+      tags: [RFI]
+      summary: Creer une demande d'information en brouillon
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InformationRequestInput" }
+      responses:
+        "201": { description: Demande creee }
+        "422": { $ref: "#/components/responses/ValidationError" }
+  /information-requests/{informationRequest}:
+    get:
+      tags: [RFI]
+      summary: Consulter une demande, ses destinataires et leurs reponses
+      parameters: [ { $ref: "#/components/parameters/InformationRequestPath" } ]
+      responses: { "200": { description: Dossier RFI complet } }
+  /information-requests/{informationRequest}/publish:
+    post:
+      tags: [RFI]
+      summary: Publier, envoyer les e-mails et generer les liens fournisseurs
+      parameters: [ { $ref: "#/components/parameters/InformationRequestPath" } ]
+      responses: { "200": { description: Demande publiee avec liens ephemeres } }
+  /information-requests/{informationRequest}/close:
+    post:
+      tags: [RFI]
+      summary: Fermer la collecte des reponses
+      parameters: [ { $ref: "#/components/parameters/InformationRequestPath" } ]
+      responses: { "200": { description: Demande cloturee } }
+  /information-requests/{informationRequest}/archive:
+    post:
+      tags: [RFI]
+      summary: Archiver la demande et ses reponses
+      parameters: [ { $ref: "#/components/parameters/InformationRequestPath" } ]
+      responses: { "200": { description: Demande archivee } }
+  /information-requests/{informationRequest}/documents:
+    post:
+      tags: [RFI]
+      summary: Ajouter un document au brouillon
+      parameters: [ { $ref: "#/components/parameters/InformationRequestPath" } ]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties: { file: { type: string, format: binary } }
+      responses: { "201": { description: Document ajoute } }
+  /information-requests/{informationRequest}/suppliers/{invitation}/regenerate-link:
+    post:
+      tags: [RFI]
+      summary: Revoquer implicitement le lien precedent et en generer un nouveau
+      parameters:
+        - { $ref: "#/components/parameters/InformationRequestPath" }
+        - { name: invitation, in: path, required: true, schema: { type: integer } }
+      responses: { "200": { description: Nouveau lien securise } }
+  /supplier-portal/information-requests/{token}:
+    get:
+      security: []
+      tags: [SupplierPortal]
+      summary: Ouvrir une demande d'information via un lien securise
+      parameters: [ { name: token, in: path, required: true, schema: { type: string, minLength: 64, maxLength: 64 } } ]
+      responses: { "200": { description: Demande, documents et reponse courante } }
+  /supplier-portal/information-requests/{token}/response:
+    post:
+      security: []
+      tags: [SupplierPortal]
+      summary: Deposer ou mettre a jour une reponse fournisseur
+      parameters: [ { name: token, in: path, required: true, schema: { type: string, minLength: 64, maxLength: 64 } } ]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [response]
+              properties:
+                response: { type: string, minLength: 5, maxLength: 10000 }
+                file: { type: string, format: binary }
+      responses:
+        "200": { description: Reponse horodatee }
+        "422": { $ref: "#/components/responses/ValidationError" }
+  /rfqs:
+    get: { tags: [RFQ], summary: Lister les consultations, responses: { "200": { description: Consultations } } }
+    post: { tags: [RFQ], summary: Creer une consultation depuis une demande approuvee, responses: { "201": { description: Consultation creee } } }
+  /rfqs/{rfq}:
+    get: { tags: [RFQ], summary: Lire une consultation et ses offres, parameters: [ { name: rfq, in: path, required: true, schema: { type: integer } } ], responses: { "200": { description: Consultation } } }
+  /rfqs/{rfq}/publish:
+    post: { tags: [RFQ], summary: Publier et generer les liens fournisseurs, parameters: [ { name: rfq, in: path, required: true, schema: { type: integer } } ], responses: { "200": { description: Consultation publiee } } }
+  /rfqs/{rfq}/close:
+    post: { tags: [RFQ], summary: Cloturer apres controle du quota, parameters: [ { name: rfq, in: path, required: true, schema: { type: integer } } ], responses: { "200": { description: Consultation cloturee } } }
+  /supplier-portal/rfqs/{token}:
+    get:
+      security: []
+      tags: [SupplierPortal]
+      summary: Ouvrir une invitation privee
+      parameters: [ { name: token, in: path, required: true, schema: { type: string } } ]
+      responses: { "200": { description: Consultation fournisseur } }
+  /supplier-portal/rfqs/{token}/offer:
+    put:
+      security: []
+      tags: [SupplierPortal]
+      summary: Enregistrer une nouvelle version d'offre et sa matrice de conformite
+      parameters: [ { name: token, in: path, required: true, schema: { type: string } } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupplierOfferInput" }
+      responses: { "200": { description: Offre enregistree } }
+  /supplier-portal/rfqs/{token}/offer/submit:
+    post:
+      security: []
+      tags: [SupplierPortal]
+      summary: Soumettre la version courante
+      parameters: [ { name: token, in: path, required: true, schema: { type: string } } ]
+      responses: { "200": { description: Offre soumise } }
+  /rfqs/{rfq}/comparison:
+    get:
+      tags: [Comparaison]
+      summary: Consulter le classement et la synthese d'une RFQ
+      parameters:
+        - { name: rfq, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Comparatif detaille }
+        "404": { description: Comparatif non genere }
+  /rfqs/{rfq}/comparison/generate:
+    post:
+      tags: [Comparaison]
+      summary: Generer ou recalculer le comparatif des offres soumises
+      parameters:
+        - { name: rfq, in: path, required: true, schema: { type: integer } }
+      responses:
+        "201": { description: Comparatif genere }
+        "422": { $ref: "#/components/responses/ValidationError" }
+  /rfqs/{rfq}/comparison/weights:
+    put:
+      tags: [Comparaison]
+      summary: Modifier les ponderations, dont la somme doit etre 100
+      parameters:
+        - { name: rfq, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [weights]
+              properties:
+                weights: { $ref: "#/components/schemas/ComparisonWeights" }
+      responses:
+        "200": { description: Comparatif recalcule }
+        "422": { $ref: "#/components/responses/ValidationError" }
+  /rfqs/{rfq}/comparison/assessments/{assessment}:
+    put:
+      tags: [Comparaison]
+      summary: Noter les criteres qualitatifs d'une offre
+      parameters:
+        - { name: rfq, in: path, required: true, schema: { type: integer } }
+        - { name: assessment, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Evaluation enregistree et classement recalcule }
+  /rfqs/{rfq}/comparison/synthesis:
+    put:
+      tags: [Comparaison]
+      summary: Enregistrer l'analyse et la recommandation
+      parameters:
+        - { name: rfq, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Synthese enregistree }
+  /rfqs/{rfq}/comparison/submit:
+    post:
+      tags: [Comparaison]
+      summary: Soumettre la recommandation pour validation
+      parameters:
+        - { name: rfq, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Validation demandee }
+  /rfqs/{rfq}/comparison/decision:
+    post:
+      tags: [Comparaison]
+      summary: Approuver ou rejeter le choix fournisseur
+      parameters:
+        - { name: rfq, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Decision enregistree }
+        "403": { description: Role insuffisant }
+  /purchase-orders:
+    get:
+      tags: [Commandes]
+      summary: Lister les bons de commande du tenant
+      responses: { "200": { description: Liste paginee } }
+    post:
+      tags: [Commandes]
+      summary: Generer un BC depuis une comparaison approuvee
+      responses: { "201": { description: Bon de commande cree }, "422": { $ref: "#/components/responses/ValidationError" } }
+  /purchase-orders/{purchaseOrder}:
+    get:
+      tags: [Commandes]
+      summary: Consulter un bon de commande
+      parameters:
+        - { name: purchaseOrder, in: path, required: true, schema: { type: integer } }
+      responses: { "200": { description: Bon de commande detaille } }
+    put:
+      tags: [Commandes]
+      summary: Modifier les conditions d'un BC brouillon
+      parameters:
+        - { name: purchaseOrder, in: path, required: true, schema: { type: integer } }
+      responses: { "200": { description: Bon de commande modifie } }
+  /purchase-orders/{purchaseOrder}/submit:
+    post:
+      tags: [Commandes]
+      summary: Soumettre le BC au circuit multi-niveaux
+      parameters:
+        - { name: purchaseOrder, in: path, required: true, schema: { type: integer } }
+      responses: { "200": { description: Validation demarree } }
+  /purchase-orders/{purchaseOrder}/decision:
+    post:
+      tags: [Commandes]
+      summary: Approuver ou rejeter l'etape active
+      parameters:
+        - { name: purchaseOrder, in: path, required: true, schema: { type: integer } }
+      responses: { "200": { description: Decision enregistree }, "403": { description: Role insuffisant } }
+  /purchase-orders/{purchaseOrder}/send:
+    post:
+      tags: [Commandes]
+      summary: Envoyer un BC valide au fournisseur
+      parameters:
+        - { name: purchaseOrder, in: path, required: true, schema: { type: integer } }
+      responses: { "200": { description: BC envoye avec URL fournisseur } }
+  /supplier-portal/purchase-orders/{token}:
+    get:
+      security: []
+      tags: [Portail fournisseur]
+      summary: Consulter un BC via un lien securise
+      parameters:
+        - { name: token, in: path, required: true, schema: { type: string } }
+      responses: { "200": { description: Bon de commande fournisseur } }
+  /supplier-portal/purchase-orders/{token}/respond:
+    post:
+      security: []
+      tags: [Portail fournisseur]
+      summary: Accepter ou refuser le BC
+      parameters:
+        - { name: token, in: path, required: true, schema: { type: string } }
+      responses: { "200": { description: Reponse fournisseur enregistree } }
+  /deliveries:
+    get:
+      tags: [Livraisons]
+      summary: Lister les livraisons du tenant
+      responses: { "200": { description: Liste paginee } }
+  /deliveries/{delivery}:
+    get:
+      tags: [Livraisons]
+      summary: Consulter quantites, reliquats et receptions
+      parameters:
+        - { name: delivery, in: path, required: true, schema: { type: integer } }
+      responses: { "200": { description: Dossier de livraison } }
+  /deliveries/{delivery}/receipts:
+    post:
+      tags: [Livraisons]
+      summary: Enregistrer une reception partielle ou totale avec BL et PV
+      parameters:
+        - { name: delivery, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [received_at, bl, pv, items]
+              properties:
+                received_at: { type: string, format: date }
+                observations: { type: string }
+                bl: { type: string, format: binary }
+                pv: { type: string, format: binary }
+                items: { type: array, items: { type: object } }
+      responses: { "200": { description: Reliquats recalcules }, "422": { $ref: "#/components/responses/ValidationError" } }
+  /supplier-portal/purchase-orders/{token}/confirm-delivery:
+    post:
+      security: []
+      tags: [Portail fournisseur]
+      summary: Confirmer la date de livraison d'une commande acceptee
+      parameters:
+        - { name: token, in: path, required: true, schema: { type: string } }
+      responses: { "200": { description: Livraison confirmee } }
+  /invoices:
+    get:
+      tags: [Factures]
+      summary: Lister les factures du tenant
+      responses: { "200": { description: Liste paginee } }
+  /invoices/{invoice}:
+    get:
+      tags: [Factures]
+      summary: Consulter une facture et son rapprochement
+      parameters:
+        - { name: invoice, in: path, required: true, schema: { type: integer } }
+      responses: { "200": { description: Facture detaillee } }
+  /invoices/{invoice}/control:
+    post:
+      tags: [Factures]
+      summary: Executer le rapprochement BC, livraison et facture
+      parameters:
+        - { name: invoice, in: path, required: true, schema: { type: integer } }
+      responses: { "200": { description: Resultat du controle } }
+  /invoices/{invoice}/transmit:
+    post:
+      tags: [Factures]
+      summary: Transmettre une facture conforme au paiement
+      parameters:
+        - { name: invoice, in: path, required: true, schema: { type: integer } }
+      responses: { "200": { description: Facture en paiement } }
+  /invoices/{invoice}/paid:
+    post:
+      tags: [Factures]
+      summary: Enregistrer la reference et la date de paiement
+      parameters:
+        - { name: invoice, in: path, required: true, schema: { type: integer } }
+      responses: { "200": { description: Facture payee }, "403": { description: Role financier requis } }
+  /supplier-portal/purchase-orders/{token}/invoices:
+    post:
+      security: []
+      tags: [Portail fournisseur]
+      summary: Deposer une facture pour une commande acceptee
+      responses: { "201": { description: Facture recue } }
+  /notifications:
+    get:
+      tags: [Automatisations]
+      summary: Lister les notifications de l'utilisateur
+      responses: { "200": { description: Liste paginee } }
+  /notifications/{notification}/read:
+    post:
+      tags: [Automatisations]
+      summary: Marquer une notification comme lue
+      responses: { "200": { description: Notification lue } }
+  /notifications/read-all:
+    post:
+      tags: [Automatisations]
+      summary: Marquer toutes les notifications comme lues
+      responses: { "204": { description: Notifications lues } }
+  /automation-settings:
+    get:
+      tags: [Automatisations]
+      summary: Consulter les delais et canaux de relance
+      responses: { "200": { description: Reglages du tenant } }
+    put:
+      tags: [Automatisations]
+      summary: Modifier les automatisations du tenant
+      responses: { "200": { description: Reglages enregistres }, "403": { description: Administrateur requis } }
+  /automations/run:
+    post:
+      tags: [Automatisations]
+      summary: Executer manuellement le moteur de relance
+      responses: { "200": { description: Statistiques d'execution } }
+  /contracts:
+    get:
+      tags: [Contracts]
+      summary: Lister et filtrer les contrats du tenant
+      responses:
+        "200": { description: Liste paginee }
+    post:
+      tags: [Contracts]
+      summary: Creer un contrat fournisseur en brouillon
+      responses:
+        "201": { description: Contrat cree }
+        "422": { $ref: "#/components/responses/ValidationError" }
+  /contracts/summary:
+    get:
+      tags: [Contracts]
+      summary: Lire les indicateurs contractuels
+      responses:
+        "200": { description: Compteurs et valeur engagee }
+  /contracts/{contract}:
+    parameters:
+      - { name: contract, in: path, required: true, schema: { type: integer } }
+    get:
+      tags: [Contracts]
+      summary: Lire le dossier contractuel complet
+      responses:
+        "200": { description: Contrat, documents et historique }
+    put:
+      tags: [Contracts]
+      summary: Modifier un contrat
+      responses:
+        "200": { description: Contrat modifie }
+    delete:
+      tags: [Contracts]
+      summary: Supprimer un brouillon
+      responses:
+        "204": { description: Contrat supprime }
+  /contracts/{contract}/activate:
+    post:
+      tags: [Contracts]
+      summary: Activer un contrat disposant d'un document signe
+      parameters:
+        - { name: contract, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Contrat active }
+        "422": { $ref: "#/components/responses/ValidationError" }
+  /contracts/{contract}/renew:
+    post:
+      tags: [Contracts]
+      summary: Renouveler un contrat et tracer la decision
+      parameters:
+        - { name: contract, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Contrat renouvele }
+  /contracts/{contract}/terminate:
+    post:
+      tags: [Contracts]
+      summary: Resilier un contrat avec un motif obligatoire
+      parameters:
+        - { name: contract, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Contrat resilie }
+  /subscription:
+    get:
+      tags: [Subscription]
+      summary: Lire le forfait, les quotas et l'usage du tenant
+      responses:
+        "200": { description: Abonnement courant et catalogue }
+  /subscription/checkout:
+    post:
+      tags: [Subscription]
+      summary: Preparer un paiement DOHONE avec un prix calcule cote serveur
+      responses:
+        "201": { description: Paiement en attente et formulaire DOHONE }
+  /subscription/cancel:
+    post:
+      tags: [Subscription]
+      summary: Programmer la resiliation en fin de periode
+      responses:
+        "200": { description: Resiliation programmee }
+  /subscription/resume:
+    post:
+      tags: [Subscription]
+      summary: Annuler une resiliation programmee
+      responses:
+        "200": { description: Abonnement maintenu }
+  /subscriptions/dohone/notify:
+    get:
+      security: []
+      tags: [Subscription]
+      summary: Verifier une notification DOHONE et activer le forfait
+      responses:
+        "200": { description: Notification verifiee ou deja traitee }
+        "403": { description: Hash ou marchand invalide }
+        "422": { description: Montant, devise ou identifiant invalide }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  parameters:
+    TenantPath: { name: tenant, in: path, required: true, schema: { type: integer } }
+    SupplierPath: { name: supplier, in: path, required: true, schema: { type: integer } }
+    SupplierDocumentPath: { name: document, in: path, required: true, schema: { type: integer } }
+    AcdeNeedPath: { name: acdeNeed, in: path, required: true, schema: { type: integer } }
+    PurchaseRequestPath: { name: purchaseRequest, in: path, required: true, schema: { type: integer } }
+    InformationRequestPath: { name: informationRequest, in: path, required: true, schema: { type: integer } }
+  responses:
+    ValidationError: { description: Donnees invalides }
+    Forbidden: { description: Action non autorisee }
+    NotFound: { description: Ressource absente ou hors tenant }
+  schemas:
+    RegisterInput:
+      type: object
+      required: [first_name, last_name, email, password, password_confirmation, company, country]
+      properties:
+        first_name: { type: string }
+        last_name: { type: string }
+        email: { type: string, format: email }
+        password: { type: string, format: password, minLength: 8 }
+        password_confirmation: { type: string, format: password }
+        company: { type: string }
+        country: { type: string, minLength: 2, maxLength: 2 }
+    SupplierInput:
+      type: object
+      required: [legal_name]
+      properties:
+        legal_name: { type: string }
+        rccm: { type: [string, "null"] }
+        niu: { type: [string, "null"] }
+        email: { type: [string, "null"], format: email }
+        phone: { type: [string, "null"] }
+        category: { type: [string, "null"] }
+        bank_name: { type: [string, "null"] }
+        iban: { type: [string, "null"] }
+        swift: { type: [string, "null"] }
+        products: { type: array, items: { type: string } }
+        services: { type: array, items: { type: string } }
+    SupplierPatchInput:
+      type: object
+      properties:
+        legal_name: { type: string }
+        rccm: { type: [string, "null"] }
+        niu: { type: [string, "null"] }
+        email: { type: [string, "null"], format: email }
+        phone: { type: [string, "null"] }
+        category: { type: [string, "null"] }
+        bank_name: { type: [string, "null"] }
+        iban: { type: [string, "null"] }
+        swift: { type: [string, "null"] }
+        products: { type: array, items: { type: string } }
+        services: { type: array, items: { type: string } }
+    SupplierEvaluationInput:
+      type: object
+      required: [credit_score, payment_terms_score, proximity_score, support_score, warranty_score, value_score]
+      properties:
+        credit_score: { type: integer, minimum: 1, maximum: 5 }
+        payment_terms_score: { type: integer, minimum: 1, maximum: 5 }
+        proximity_score: { type: integer, minimum: 1, maximum: 5 }
+        support_score: { type: integer, minimum: 1, maximum: 5 }
+        warranty_score: { type: integer, minimum: 1, maximum: 5 }
+        value_score: { type: integer, minimum: 1, maximum: 5 }
+        comment: { type: [string, "null"] }
+    AcdeNeedInput:
+      type: object
+      required: [title, items]
+      properties:
+        title: { type: string }
+        context: { type: [string, "null"] }
+        service: { type: [string, "null"] }
+        needed_at: { type: [string, "null"], format: date }
+        priority: { type: string, enum: [low, normal, high, urgent] }
+        budget_amount: { type: [integer, "null"], minimum: 0 }
+        currency: { type: [string, "null"], enum: [XAF, EUR, USD, null] }
+        delivery_location: { type: [string, "null"] }
+        items:
+          type: array
+          minItems: 4
+          items:
+            type: object
+            required: [kind, content]
+            properties:
+              kind: { type: string, enum: [expectation, constraint, data, requirement] }
+              priority_level: { type: [string, "null"], enum: [mandatory, desired, comfort, null] }
+              content: { type: string }
+              criterion: { type: [string, "null"] }
+              target_value: { type: [string, "null"] }
+              unit: { type: [string, "null"] }
+              tolerance: { type: [string, "null"] }
+              verification_method: { type: [string, "null"] }
+    AcdeNeedPatchInput:
+      type: object
+      properties:
+        title: { type: string }
+        context: { type: [string, "null"] }
+        service: { type: [string, "null"] }
+        needed_at: { type: [string, "null"], format: date }
+        priority: { type: string, enum: [low, normal, high, urgent] }
+        budget_amount: { type: [integer, "null"], minimum: 0 }
+        currency: { type: [string, "null"], enum: [XAF, EUR, USD, null] }
+        delivery_location: { type: [string, "null"] }
+        items:
+          $ref: "#/components/schemas/AcdeNeedInput/properties/items"
+    PurchaseRequestItemInput:
+      type: object
+      required: [description, quantity, unit]
+      properties:
+        description: { type: string }
+        quantity: { type: number, exclusiveMinimum: 0 }
+        unit: { type: string }
+        estimated_unit_price: { type: [integer, "null"], minimum: 0 }
+        specifications: { type: [string, "null"] }
+    PurchaseRequestInput:
+      type: object
+      required: [title, service, priority, reason, items]
+      properties:
+        title: { type: string }
+        service: { type: string }
+        cost_center: { type: [string, "null"] }
+        project: { type: [string, "null"] }
+        priority: { type: string, enum: [low, normal, high, urgent] }
+        reason: { type: string }
+        needed_at: { type: [string, "null"], format: date }
+        delivery_location: { type: [string, "null"] }
+        acde_need_id: { type: [integer, "null"] }
+        currency: { type: [string, "null"] }
+        action: { type: [string, "null"], enum: [draft, submit, null] }
+        items:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/PurchaseRequestItemInput"
+    PurchaseRequestPatchInput:
+      type: object
+      properties:
+        title: { type: string }
+        service: { type: string }
+        cost_center: { type: [string, "null"] }
+        project: { type: [string, "null"] }
+        priority: { type: string, enum: [low, normal, high, urgent] }
+        reason: { type: string }
+        needed_at: { type: [string, "null"], format: date }
+        delivery_location: { type: [string, "null"] }
+        acde_need_id: { type: [integer, "null"] }
+        currency: { type: [string, "null"] }
+        action: { type: [string, "null"], enum: [draft, submit, null] }
+        items:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/PurchaseRequestItemInput"
+    InformationRequestInput:
+      type: object
+      required: [subject, description, response_deadline, supplier_ids]
+      properties:
+        subject: { type: string, maxLength: 255 }
+        description: { type: string, minLength: 10, maxLength: 10000 }
+        category: { type: [string, "null"], maxLength: 120 }
+        response_deadline: { type: string, format: date-time }
+        supplier_ids:
+          type: array
+          minItems: 1
+          maxItems: 100
+          uniqueItems: true
+          items: { type: integer }
+    SupplierOfferInput:
+      type: object
+      required: [currency, lead_time_days, validity_days, items, requirements]
+      properties:
+        currency: { type: string, maxLength: 8 }
+        transport_cost: { type: integer, minimum: 0 }
+        insurance_cost: { type: integer, minimum: 0 }
+        lead_time_days: { type: integer, minimum: 0, maximum: 3650 }
+        validity_days: { type: integer, minimum: 1, maximum: 3650 }
+        payment_terms: { type: [string, "null"] }
+        warranty: { type: [string, "null"] }
+        incoterm: { type: [string, "null"] }
+        notes: { type: [string, "null"] }
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [rfq_item_id, quantity, unit_price, is_compliant]
+            properties:
+              rfq_item_id: { type: integer }
+              quantity: { type: number, exclusiveMinimum: 0 }
+              unit_price: { type: integer, minimum: 0 }
+              discount_percent: { type: number, minimum: 0, maximum: 100 }
+              tax_percent: { type: number, minimum: 0, maximum: 100 }
+              is_compliant: { type: boolean }
+              comment: { type: [string, "null"] }
+        requirements:
+          type: array
+          maxItems: 200
+          items:
+            type: object
+            required: [rfq_requirement_id, status]
+            properties:
+              rfq_requirement_id: { type: integer }
+              status: { type: string, enum: [compliant, partial, non_compliant, not_applicable] }
+              response: { type: [string, "null"], maxLength: 5000 }
+              evidence_reference: { type: [string, "null"], maxLength: 255 }
+    ComparisonWeights:
+      type: object
+      required: [price, delivery, technical, payment, warranty, supplier_performance, proximity]
+      properties:
+        price: { type: integer, minimum: 0, maximum: 100 }
+        delivery: { type: integer, minimum: 0, maximum: 100 }
+        technical: { type: integer, minimum: 0, maximum: 100 }
+        payment: { type: integer, minimum: 0, maximum: 100 }
+        warranty: { type: integer, minimum: 0, maximum: 100 }
+        supplier_performance: { type: integer, minimum: 0, maximum: 100 }
+        proximity: { type: integer, minimum: 0, maximum: 100 }
+    ApprovalWorkflowInput:
+      type: object
+      required: [name, steps]
+      properties:
+        name: { type: string }
+        steps:
+          type: array
+          minItems: 1
+          maxItems: 10
+          items:
+            type: object
+            required: [role, minimum_amount]
+            properties:
+              role: { type: string, enum: [manager, buyer, procurement_manager, controller, finance, director] }
+              minimum_amount: { type: integer, minimum: 0 }
+              maximum_amount: { type: [integer, "null"], minimum: 0 }

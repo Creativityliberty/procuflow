@@ -1,0 +1,111 @@
+:root {
+  --bg: #f3f1f7;
+  --surface: rgba(255, 255, 255, 0.88);
+  --surface-soft: rgba(249, 250, 251, 0.84);
+  --border: rgba(218, 213, 225, 0.88);
+}
+
+body {
+  background: var(--bg);
+  letter-spacing: 0;
+}
+
+.brand-mark {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 11px;
+  box-shadow: 0 5px 16px rgba(109, 40, 217, 0.26);
+  color: #fff;
+}
+
+.brand-mark svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.brand-text strong {
+  font-size: 15px;
+  font-weight: 680;
+  letter-spacing: 0;
+}
+
+.sidebar {
+  background: rgba(29, 23, 36, 0.96);
+  backdrop-filter: blur(12px);
+}
+
+.panel,
+.auth-box,
+.dialog {
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 5px 18px rgba(31, 24, 40, 0.055);
+  backdrop-filter: blur(12px);
+}
+
+.auth-page {
+  background: var(--bg);
+}
+
+.auth-box {
+  max-width: 460px;
+  border: 1px solid var(--border);
+  padding: 28px;
+}
+
+.topbar {
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 3px 16px rgba(31, 24, 40, 0.035);
+  backdrop-filter: blur(12px);
+}
+
+.company,
+.nav-item,
+.icon-button,
+.primary-button,
+.secondary-button,
+.setup-item,
+.quick-action,
+.toast,
+.dialog input,
+.dialog select,
+.dialog textarea,
+.auth-box input,
+.auth-box select,
+.search input {
+  border-radius: 11px;
+}
+
+.icon-button,
+.secondary-button,
+.setup-item,
+.document-list button,
+.auth-box input,
+.auth-box select,
+.dialog input,
+.dialog select,
+.dialog textarea,
+.search input {
+  background: rgba(255, 255, 255, 0.84);
+}
+
+.metric > svg,
+.quick-action > span,
+.company-icon {
+  border-radius: 10px;
+}
+
+.page-heading h1,
+.auth-box h1 {
+  letter-spacing: 0;
+}
+
+@media (max-width: 800px) {
+  .auth-box {
+    padding: 22px;
+  }
+}

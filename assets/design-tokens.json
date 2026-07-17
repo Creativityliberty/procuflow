@@ -1,0 +1,28 @@
+{
+  "name": "ProcuFlow Africa Sprint 00",
+  "colors": {
+    "background": "#f7f3ff",
+    "surface": "#ffffff",
+    "surfaceSoft": "#fbf8ff",
+    "ink": "#211a2f",
+    "muted": "#756b86",
+    "violet": "#7c3aed",
+    "violetDark": "#5b21b6",
+    "violetSoft": "#ede9fe",
+    "success": "#16a34a",
+    "warning": "#f59e0b",
+    "danger": "#ef4444",
+    "border": "#e9ddff"
+  },
+  "radius": {
+    "sm": "10px",
+    "md": "16px",
+    "lg": "24px",
+    "xl": "32px"
+  },
+  "shadow": {
+    "panel": "0 24px 70px rgba(80, 49, 140, 0.14)",
+    "button": "0 16px 32px rgba(124, 58, 237, 0.28)"
+  }
+}
+

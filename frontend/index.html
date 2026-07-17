@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ProcuFlow - Tableau de bord</title>
+    <link rel="stylesheet" href="./styles.css" /><link rel="stylesheet" href="./sprint04.css" />
+  </head>
+  <body>
+    <div class="app-shell" id="appShell">
+      <aside class="sidebar" id="sidebar">
+        <div class="brand-row">
+          <a class="brand" href="./index.html" aria-label="ProcuFlow - Accueil"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 5 7 7-7 7M12 5l7 7-7 7" /></svg></span><span class="brand-text"><strong>ProcuFlow</strong><small>Gestion des achats</small></span></a>
+          <button class="icon-button mobile-only" id="closeMobile" type="button" aria-label="Fermer le menu"><i data-lucide="x"></i></button>
+        </div>
+        <div class="company"><span class="company-icon"><i data-lucide="building-2"></i></span><span class="company-text"><strong>Yogi Conseils</strong><small>Espace entreprise</small></span><i class="company-arrow" data-lucide="chevron-right"></i></div>
+        <nav class="nav-list" aria-label="Navigation principale">
+          <a class="nav-item active" href="./index.html" title="Tableau de bord"><i data-lucide="layout-dashboard"></i><span>Tableau de bord</span></a>
+          <button class="nav-item" data-toast="Liste des fournisseurs ouverte" title="Fournisseurs"><i data-lucide="users-round"></i><span>Fournisseurs</span></button>
+          <button class="nav-item" data-toast="Expression du besoin ouverte" title="Expression du besoin"><i data-lucide="clipboard-list"></i><span>Expression du besoin</span></button>
+          <button class="nav-item" data-open-request title="Demandes d'achat"><i data-lucide="file-text"></i><span>Demandes d'achat</span></button>
+          <button class="nav-item" data-toast="Consultations ouvertes" title="Consultations"><i data-lucide="git-compare"></i><span>Consultations</span></button>
+          <button class="nav-item" data-toast="Commandes ouvertes" title="Commandes"><i data-lucide="package-check"></i><span>Commandes</span></button>
+          <button class="nav-item" data-toast="Livraisons ouvertes" title="Livraisons"><i data-lucide="truck"></i><span>Livraisons</span></button>
+          <button class="nav-item" data-toast="Factures ouvertes" title="Factures"><i data-lucide="file-check-2"></i><span>Factures</span></button>
+        </nav>
+        <div class="sidebar-footer">
+          <button class="nav-item" data-toast="Parametres ouverts" title="Parametres"><i data-lucide="settings"></i><span>Parametres</span></button>
+          <a class="nav-item" href="./login.html" title="Se deconnecter"><i data-lucide="log-out"></i><span>Se deconnecter</span></a>
+          <button class="nav-item desktop-only" id="collapseSidebar" title="Reduire le menu"><i data-lucide="panel-left-close"></i><span>Reduire le menu</span></button>
+        </div>
+      </aside>
+      <button class="mobile-backdrop" id="backdrop" type="button" aria-label="Fermer le menu"></button>
+
+      <main class="workspace">
+        <header class="topbar">
+          <button class="icon-button mobile-only" id="openMobile" type="button" aria-label="Ouvrir le menu"><i data-lucide="menu"></i></button>
+          <label class="search"><i data-lucide="search"></i><span class="sr-only">Rechercher</span><input type="search" placeholder="Rechercher une demande, un fournisseur..." /></label>
+          <div class="top-actions"><button class="icon-button" type="button" data-toast="Vous avez 3 notifications" aria-label="Notifications"><i data-lucide="bell"></i><span class="notification-dot"></span></button><button class="primary-button" type="button" data-open-request><i data-lucide="plus"></i><span>Nouvelle demande</span></button></div>
+        </header>
+
+        <div class="page-content">
+          <header class="page-heading"><div><p>Vue d'ensemble des achats</p><h1>Bonjour, Armand</h1></div><button class="secondary-button" data-toast="Configuration de l'entreprise ouverte">Configurer mon entreprise</button></header>
+
+          <section class="metrics" aria-label="Indicateurs cles">
+            <article class="panel metric"><span>Demandes en attente</span><i data-lucide="clipboard-plus"></i><strong>18</strong><small>+6 cette semaine</small></article>
+            <article class="panel metric"><span>Montant engage</span><i data-lucide="file-check-2"></i><strong>42,8 M XAF</strong><small>Budget sous controle</small></article>
+            <article class="panel metric"><span>Fournisseurs actifs</span><i data-lucide="users-round"></i><strong>126</strong><small>14 a valider</small></article>
+            <article class="panel metric"><span>Commandes non livrees</span><i data-lucide="truck"></i><strong>9</strong><small>3 urgentes</small></article>
+          </section>
+
+          <section class="panel setup-panel">
+            <div class="section-heading"><div><h2>Demarrage rapide</h2><p>Les premieres actions pour mettre votre espace en service.</p></div><span class="status warning">1 sur 3</span></div>
+            <div class="setup-grid">
+              <button class="setup-item" data-toast="Informations de l'entreprise completes"><i class="success" data-lucide="circle-check"></i><span><strong>Entreprise configuree</strong><small>Informations principales ajoutees</small></span><i data-lucide="arrow-right"></i></button>
+              <button class="setup-item" data-toast="Formulaire fournisseur ouvert"><i class="muted" data-lucide="circle"></i><span><strong>Ajouter un fournisseur</strong><small>Creer votre premier fournisseur</small></span><i data-lucide="arrow-right"></i></button>
+              <button class="setup-item" data-toast="Regles de validation ouvertes"><i class="muted" data-lucide="circle"></i><span><strong>Choisir les validateurs</strong><small>Definir qui approuve les achats</small></span><i data-lucide="arrow-right"></i></button>
+            </div>
+          </section>
+
+          <section><h2 class="section-title">Actions courantes</h2><div class="quick-grid">
+            <button class="panel quick-action" data-toast="Formulaire fournisseur ouvert"><span><i data-lucide="building-2"></i></span><div><strong>Ajouter un fournisseur</strong><small>Coordonnees et documents</small></div><i data-lucide="arrow-right"></i></button>
+            <button class="panel quick-action" data-open-request><span><i data-lucide="clipboard-plus"></i></span><div><strong>Creer une demande d'achat</strong><small>Besoin et validation</small></div><i data-lucide="arrow-right"></i></button>
+            <button class="panel quick-action" data-toast="Suivi des commandes ouvert"><span><i data-lucide="package-check"></i></span><div><strong>Suivre une commande</strong><small>Validation et livraison</small></div><i data-lucide="arrow-right"></i></button>
+          </div></section>
+
+          <section class="main-grid">
+            <article class="panel table-panel"><div class="section-heading padded"><div><h2>Demandes recentes</h2><p>Dernieres demandes mises a jour</p></div><button class="secondary-button" data-toast="Filtres ouverts"><i data-lucide="sliders-horizontal"></i> Filtrer</button></div><div class="table-wrap"><table><thead><tr><th>Reference</th><th>Objet</th><th>Service</th><th>Montant</th><th>Statut</th></tr></thead><tbody><tr><td><a href="./index.html?request=DA-2401">DA-2401</a></td><td>Ordinateurs equipe finance</td><td>Finance</td><td>6,2 M XAF</td><td><span class="status warning">En validation</span></td></tr><tr><td><a href="./index.html?request=DA-2402">DA-2402</a></td><td>Maintenance groupe electrogene</td><td>Operations</td><td>1,1 M XAF</td><td><span class="status success-bg">Validee</span></td></tr><tr><td><a href="./index.html?request=DA-2403">DA-2403</a></td><td>Fournitures bureau Q3</td><td>Admin</td><td>850 k XAF</td><td><span class="status neutral">Brouillon</span></td></tr></tbody></table></div></article>
+            <aside class="panel document-panel"><div class="section-heading padded"><div><h2>Documents fournisseurs</h2><p>Situations a traiter</p></div></div><div class="document-list"><button><i class="success" data-lucide="circle-check"></i><span><strong>CamTech Services</strong><small>Dossier conforme</small></span><b>4,6/5</b></button><button><i class="warning-text" data-lucide="clock-3"></i><span><strong>LogisPro Douala</strong><small>En attente de validation</small></span><b>4,1/5</b></button><button><i class="danger" data-lucide="triangle-alert"></i><span><strong>BTP Horizon</strong><small>Assurance expiree</small></span><b>3,2/5</b></button></div></aside>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <dialog id="requestDialog" class="dialog"><form method="dialog" id="requestForm"><div class="dialog-heading"><div><h2>Nouvelle demande d'achat</h2><p>Renseignez les informations principales.</p></div><button class="icon-button" value="cancel" aria-label="Fermer"><i data-lucide="x"></i></button></div><label><span>Objet de la demande</span><input name="title" required placeholder="Ex. Ordinateurs pour l'equipe finance" /></label><div class="form-grid"><label><span>Service</span><select required><option>Finance</option><option>Operations</option><option>Administration</option></select></label><label><span>Priorite</span><select><option>Normale</option><option>Haute</option><option>Urgente</option></select></label></div><label><span>Justification</span><textarea required placeholder="Pourquoi cet achat est-il necessaire ?"></textarea></label><div class="dialog-actions"><button class="secondary-button" value="cancel">Annuler</button><button class="primary-button" value="default" id="saveRequest"><i data-lucide="send"></i> Envoyer en validation</button></div></form></dialog>
+    <div class="toast" id="toast" role="status"></div>
+    <script src="./vendor/lucide.min.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
